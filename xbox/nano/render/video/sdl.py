@@ -22,7 +22,11 @@ class SDLVideoRenderer(Sink):
     def __init__(self, width, height, fullscreen=False):
         self._window = None
         self._window_dimensions = (width, height)
-        self._window_flags = sdl2.SDL_WINDOW_FULLSCREEN if fullscreen else 0
+        if fullscreen:
+            self._window_flags = (sdl2.SDL_WINDOW_FULLSCREEN_DESKTOP |
+                                  sdl2.SDL_WINDOW_BORDERLESS)
+        else:
+            self._window_flags = 0
         self._renderer = None
         self._texture = None
         self._decoder = None

@@ -5,7 +5,11 @@
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/xbox/nano/scripts/client.py",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "args": [
+                "-v",
+                //"-f" enables fullscreen (desktop-resolution)
+            ]
         },
         {
             "name": "Python: Attach",

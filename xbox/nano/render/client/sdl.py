@@ -5,9 +5,9 @@ from xbox.nano.render.input.sdl import SDLInputHandler
 
 
 class SDLClient(Client):
-    def __init__(self, width, height):
+    def __init__(self, width, height, fullscreen=False):
         super(SDLClient, self).__init__(
-            SDLVideoRenderer(width, height),
+            SDLVideoRenderer(width, height, fullscreen),
             SDLAudioRenderer(),
             SDLInputHandler()
         )

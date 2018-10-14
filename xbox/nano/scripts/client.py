@@ -18,11 +18,18 @@ def main():
                         help="Token file, created by xbox-authenticate script")
     parser.add_argument('--address', '-a',
                         help="IP address of console")
+    parser.add_argument('--fullscreen', '-f', action='store_true',
+                        help="Run in fullscreen mode")
     parser.add_argument('--refresh', '-r', action='store_true',
                         help="Refresh xbox live tokens in provided token file")
+    parser.add_argument('--verbose', '-v', action='store_true',
+                        help="Debug mode")
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.DEBUG)
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.ERROR)
 
     try:
         auth_mgr = AuthenticationManager.from_file(args.tokens)
@@ -50,7 +57,7 @@ def main():
         console.nano.start_stream()
         console.wait(2)
 
-        client = SDLClient(1280, 720)
+        client = SDLClient(1280, 720, args.fullscreen)
         console.nano.start_gamestream(client)
 
         try:

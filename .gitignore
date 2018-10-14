@@ -10,13 +10,17 @@ __pycache__/
 # Distribution / packaging
 .Python
 .env/
+bin
 build/
 develop-eggs/
 dist/
 downloads/
+include/
 eggs/
 .eggs/
+lib
 lib/
+lib64
 lib64/
 parts/
 sdist/
@@ -65,3 +69,5 @@ target/
 # Node
 node_modules
 
+# pip
+pip-selfcheck.json

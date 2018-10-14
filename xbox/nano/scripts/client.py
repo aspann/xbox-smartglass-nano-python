@@ -26,10 +26,7 @@ def main():
                         help="Debug mode")
     args = parser.parse_args()
 
-    if args.verbose:
-        logging.basicConfig(level=logging.DEBUG)
-    else:
-        logging.basicConfig(level=logging.ERROR)
+    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.ERROR)
 
     try:
         auth_mgr = AuthenticationManager.from_file(args.tokens)

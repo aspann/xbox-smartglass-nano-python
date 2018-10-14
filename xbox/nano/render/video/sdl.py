@@ -1,8 +1,10 @@
+import os
 import logging
 import threading
+import ctypes
 from ctypes import cast, c_ubyte, POINTER
 
-import sdl2
+from sdl2 import events
 import sdl2.ext
 
 from xbox.nano.enum import VideoCodec
@@ -22,11 +24,8 @@ class SDLVideoRenderer(Sink):
     def __init__(self, width, height, fullscreen=False):
         self._window = None
         self._window_dimensions = (width, height)
-        if fullscreen:
-            self._window_flags = (sdl2.SDL_WINDOW_FULLSCREEN_DESKTOP |
-                                  sdl2.SDL_WINDOW_BORDERLESS)
-        else:
-            self._window_flags = 0
+        self._window_flags = (sdl2.SDL_WINDOW_FULLSCREEN_DESKTOP |
+                              sdl2.SDL_WINDOW_BORDERLESS) if fullscreen else 0
         self._renderer = None
         self._texture = None
         self._decoder = None
@@ -52,9 +51,12 @@ class SDLVideoRenderer(Sink):
 
     def close(self):
         sdl2.SDL_DestroyTexture(self._texture)
+        del self._decoder
         del self._renderer
         del self._window
         sdl2.ext.quit()
+        # exit whole application
+        os._exit(1)
 
     def setup(self, fmt):
         if fmt.codec == VideoCodec.H264:
@@ -74,24 +76,37 @@ class SDLVideoRenderer(Sink):
         )
 
     def render(self, data):
-        renderer = self._renderer.sdlrenderer
-        try:
-            for frame in self._decoder.decode(data):
-                self._lock.acquire()
-                intp = POINTER(c_ubyte)
-                sdl2.SDL_UpdateYUVTexture(
-                    self._texture, None,
-                    cast(frame.planes[0].ptr, intp), frame.planes[0].line_size,
-                    cast(frame.planes[1].ptr, intp), frame.planes[1].line_size,
-                    cast(frame.planes[2].ptr, intp), frame.planes[2].line_size,
-                )
-                self._lock.release()
-                sdl2.SDL_RenderClear(renderer)
-                sdl2.SDL_RenderCopy(renderer, self._texture, None, None)
-                sdl2.SDL_RenderPresent(renderer)
-        except Exception as e:
-            log.debug('SDLVideoRenderer.render: {0}'.format(e))
+        if hasattr(self, '_renderer'):
+            renderer = self._renderer.sdlrenderer
+            try:
+                for frame in self._decoder.decode(data):
+                    self._lock.acquire()
+
+                    # hackish way of implement close
+                    event = events.SDL_Event()
+                    if (events.SDL_PollEvent(ctypes.byref(event), 1) == 1
+                            and event.type == events.SDL_QUIT):
+                        self.close()
+                        break
+
+                    intp = POINTER(c_ubyte)
+                    sdl2.SDL_UpdateYUVTexture(
+                        self._texture, None,
+                        cast(frame.planes[0].ptr,
+                             intp), frame.planes[0].line_size,
+                        cast(frame.planes[1].ptr,
+                             intp), frame.planes[1].line_size,
+                        cast(frame.planes[2].ptr,
+                             intp), frame.planes[2].line_size,
+                    )
+                    self._lock.release()
+                    sdl2.SDL_RenderClear(renderer)
+                    sdl2.SDL_RenderCopy(renderer, self._texture, None, None)
+                    sdl2.SDL_RenderPresent(renderer)
+            except Exception as e:
+                log.debug('SDLVideoRenderer.render: {0}'.format(e))
 
     def pump(self):
         sdl2.SDL_PumpEvents()
-        self._window.refresh()
+        if hasattr(self, '_window'):
+            self._window.refresh()
